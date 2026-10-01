@@ -32,6 +32,8 @@ class PasswordTest extends TestCase
 
         $this->post("/select/{$grocery->id}")->assertRedirect('/login');
         $this->post('/groceries/add', ['name' => 'Bot'])->assertRedirect('/login');
+        $this->patch("/groceries/{$grocery->id}", ['name' => 'Bot'])->assertRedirect('/login');
+        $this->delete("/groceries/{$grocery->id}")->assertRedirect('/login');
 
         $this->assertFalse($grocery->fresh()->selected);
         $this->assertSame(1, Grocery::count());

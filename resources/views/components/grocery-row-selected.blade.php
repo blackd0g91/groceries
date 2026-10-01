@@ -1,6 +1,6 @@
 @props(['grocery'])
 
-<li data-item data-name="{{ $grocery->name }}" class="flex items-center gap-3 px-4 py-2.5">
+<li data-item data-name="{{ $grocery->name }}" data-undo-action="{{ url('select/' . $grocery->id) }}" class="flex items-center gap-3 px-4 py-2.5">
     <x-grocery-link :grocery="$grocery" />
     <form method="POST" action="{{ url('trash/' . $grocery->id) }}" data-remove-row data-delta="-1">
         @csrf

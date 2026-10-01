@@ -131,4 +131,61 @@ class GroceryRoutesTest extends TestCase
 
         $this->assertSame(0, Grocery::count());
     }
+
+    public function test_edit_page_shows_grocery(): void
+    {
+        $grocery = Grocery::factory()->create(['name' => 'Arroz']);
+
+        $this->get("/groceries/{$grocery->id}/edit")
+            ->assertOk()
+            ->assertSee('value="Arroz"', false);
+    }
+
+    public function test_rename_normalizes_name(): void
+    {
+        $grocery = Grocery::factory()->create(['name' => 'Leitezzzz']);
+
+        $this->patch("/groceries/{$grocery->id}", ['name' => '  leite   em pó '])->assertRedirect('main');
+
+        $this->assertSame('Leite Em Pó', $grocery->fresh()->name);
+    }
+
+    public function test_rename_allows_keeping_same_name(): void
+    {
+        $grocery = Grocery::factory()->create(['name' => 'Arroz']);
+
+        $this->patch("/groceries/{$grocery->id}", ['name' => 'arroz'])->assertSessionHasNoErrors();
+
+        $this->assertSame('Arroz', $grocery->fresh()->name);
+    }
+
+    public function test_rename_rejects_duplicate_and_invalid_names(): void
+    {
+        Grocery::factory()->create(['name' => 'Arroz']);
+        $grocery = Grocery::factory()->create(['name' => 'Feijão']);
+
+        $this->patch("/groceries/{$grocery->id}", ['name' => 'arroz'])->assertSessionHasErrors('name');
+        $this->patch("/groceries/{$grocery->id}", ['name' => ''])->assertSessionHasErrors('name');
+        $this->patch("/groceries/{$grocery->id}", ['name' => str_repeat('a', 256)])->assertSessionHasErrors('name');
+
+        $this->assertSame('Feijão', $grocery->fresh()->name);
+    }
+
+    public function test_delete_removes_grocery_and_its_purchases(): void
+    {
+        $grocery = Grocery::factory()->create();
+        Purchase::create(['grocery_id' => $grocery->id]);
+
+        $this->delete("/groceries/{$grocery->id}")->assertRedirect('main');
+
+        $this->assertModelMissing($grocery);
+        $this->assertSame(0, Purchase::count());
+    }
+
+    public function test_edit_routes_return_404_for_missing_grocery(): void
+    {
+        $this->get('/groceries/999/edit')->assertNotFound();
+        $this->patch('/groceries/999', ['name' => 'X'])->assertNotFound();
+        $this->delete('/groceries/999')->assertNotFound();
+    }
 }

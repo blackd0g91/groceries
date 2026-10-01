@@ -6,6 +6,7 @@ use App\Http\Middleware\RequirePassword;
 use App\Models\Grocery;
 use App\Models\Purchase;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 Route::get('login', function() {
     if (session(RequirePassword::SESSION_KEY)) return redirect('/');
@@ -105,6 +106,40 @@ Route::middleware(RequirePassword::class)->group(function () {
         $name = Str::title(Str::squish($validated['name']));
 
         Grocery::firstOrCreate(['name' => $name], ['selected' => false]);
+
+        return redirect('main');
+
+    });
+
+    Route::get('groceries/{grocery}/edit', function(Grocery $grocery) {
+        return view('edit', ['grocery' => $grocery]);
+    });
+
+    Route::patch('groceries/{grocery}', function(Grocery $grocery) {
+
+        request()->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        // Normalize before the uniqueness check so "arroz" collides with "Arroz".
+        request()->merge(['name' => Str::title(Str::squish(request()->input('name')))]);
+
+        $validated = request()->validate([
+            'name' => [Rule::unique('groceries', 'name')->ignore($grocery)],
+        ], [
+            'name.unique' => 'There is already an item with this name.',
+        ]);
+
+        $grocery->name = $validated['name'];
+        $grocery->save();
+
+        return redirect('main');
+
+    });
+
+    Route::delete('groceries/{grocery}', function(Grocery $grocery) {
+
+        $grocery->delete();
 
         return redirect('main');
 
