@@ -9,11 +9,6 @@ class Purchase extends Model
 {
     protected $fillable = [
         'grocery_id',
-        'amount',
-    ];
-
-    protected $casts = [
-        'amount' => 'integer',
     ];
 
     public function grocery(): BelongsTo

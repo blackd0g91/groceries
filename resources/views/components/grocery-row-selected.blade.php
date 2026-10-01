@@ -2,13 +2,6 @@
 
 <tr class="{{ $position % 2 == 0 ? 'even' : 'odd' }}">
     <td><x-grocery-link :grocery="$grocery" /></td>
-    @for ($i = 1; $i <= 5; $i++)
-        @if ($grocery->amount == $i)
-            <td><p>{{ $i }}</p></td>
-        @else
-            <td><x-select-button :grocery="$grocery" :value="$i" /></td>
-        @endif
-    @endfor
     <td>
         <form method="POST" action="{{ url('trash/' . $grocery->id) }}">
             @csrf

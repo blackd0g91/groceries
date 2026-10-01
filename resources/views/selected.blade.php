@@ -2,7 +2,7 @@
 
 use App\Models\Grocery;
 
-$selectedGroceries = Grocery::where('amount', '>', 0)->orderBy('name')->get();
+$selectedGroceries = Grocery::where('selected', true)->orderBy('name')->get();
 
 @endphp
 
@@ -17,7 +17,6 @@ $selectedGroceries = Grocery::where('amount', '>', 0)->orderBy('name')->get();
         <thead>
             <tr>
                 <th>Name</th>
-                <th colspan="5">Amount</th>
                 <th>Trash</th>
             </tr>
         </thead>

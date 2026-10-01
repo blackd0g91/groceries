@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\RequirePassword;
 use App\Models\Grocery;
 use App\Models\Purchase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,12 +17,13 @@ class GroceryRoutesTest extends TestCase
         parent::setUp();
 
         $this->withoutVite();
+        $this->withSession([RequirePassword::SESSION_KEY => true]);
     }
 
     public function test_main_lists_only_unselected_groceries(): void
     {
         Grocery::factory()->create(['name' => 'Arroz']);
-        Grocery::factory()->create(['name' => 'Feijão', 'amount' => 2]);
+        Grocery::factory()->create(['name' => 'Feijão', 'selected' => true]);
 
         $this->get('/')
             ->assertOk()
@@ -32,7 +34,7 @@ class GroceryRoutesTest extends TestCase
     public function test_selected_lists_only_selected_groceries(): void
     {
         Grocery::factory()->create(['name' => 'Arroz']);
-        Grocery::factory()->create(['name' => 'Feijão', 'amount' => 2]);
+        Grocery::factory()->create(['name' => 'Feijão', 'selected' => true]);
 
         $this->get('/selected')
             ->assertOk()
@@ -50,80 +52,67 @@ class GroceryRoutesTest extends TestCase
             ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false);
     }
 
-    public function test_select_sets_amount(): void
+    public function test_select_marks_grocery_as_selected(): void
     {
         $grocery = Grocery::factory()->create();
 
-        $this->post("/select/{$grocery->id}", ['value' => 3])->assertRedirect();
+        $this->post("/select/{$grocery->id}")->assertRedirect();
 
-        $this->assertSame(3, $grocery->fresh()->amount);
-    }
-
-    public function test_select_rejects_out_of_range_values(): void
-    {
-        $grocery = Grocery::factory()->create();
-
-        foreach ([0, 6, -1, 'abc', null] as $value) {
-            $this->post("/select/{$grocery->id}", ['value' => $value])->assertSessionHasErrors('value');
-        }
-
-        $this->assertSame(0, $grocery->fresh()->amount);
+        $this->assertTrue($grocery->fresh()->selected);
     }
 
     public function test_select_returns_404_for_missing_grocery(): void
     {
-        $this->post('/select/999', ['value' => 1])->assertNotFound();
+        $this->post('/select/999')->assertNotFound();
     }
 
     public function test_state_changing_routes_reject_get(): void
     {
-        $grocery = Grocery::factory()->create(['amount' => 2]);
+        $grocery = Grocery::factory()->create(['selected' => true]);
 
-        $this->get("/select/{$grocery->id}?value=1")->assertMethodNotAllowed();
+        $this->get("/select/{$grocery->id}")->assertMethodNotAllowed();
         $this->get("/trash/{$grocery->id}")->assertMethodNotAllowed();
         $this->get('/trash-all')->assertMethodNotAllowed();
         $this->get('/purchase')->assertMethodNotAllowed();
 
-        $this->assertSame(2, $grocery->fresh()->amount);
+        $this->assertTrue($grocery->fresh()->selected);
     }
 
-    public function test_trash_resets_amount(): void
+    public function test_trash_unselects_grocery(): void
     {
-        $grocery = Grocery::factory()->create(['amount' => 4]);
+        $grocery = Grocery::factory()->create(['selected' => true]);
 
         $this->post("/trash/{$grocery->id}")->assertRedirect();
 
-        $this->assertSame(0, $grocery->fresh()->amount);
+        $this->assertFalse($grocery->fresh()->selected);
     }
 
-    public function test_trash_all_resets_every_amount(): void
+    public function test_trash_all_unselects_every_grocery(): void
     {
-        Grocery::factory()->count(3)->create(['amount' => 2]);
+        Grocery::factory()->count(3)->create(['selected' => true]);
 
         $this->post('/trash-all')->assertRedirect('main');
 
-        $this->assertSame(0, Grocery::where('amount', '>', 0)->count());
+        $this->assertSame(0, Grocery::where('selected', true)->count());
     }
 
-    public function test_purchase_records_selected_groceries_and_resets_them(): void
+    public function test_purchase_records_selected_groceries_and_unselects_them(): void
     {
-        $selected = Grocery::factory()->create(['amount' => 3]);
+        $selected = Grocery::factory()->create(['selected' => true]);
         Grocery::factory()->create();
 
         $this->post('/purchase')->assertRedirect();
 
         $this->assertSame(1, Purchase::count());
-        $purchase = Purchase::first();
-        $this->assertSame($selected->id, $purchase->grocery_id);
-        $this->assertSame(3, $purchase->amount);
-        $this->assertSame(0, $selected->fresh()->amount);
+        $this->assertSame($selected->id, Purchase::first()->grocery_id);
+        $this->assertFalse($selected->fresh()->selected);
     }
 
     public function test_add_creates_title_cased_grocery(): void
     {
         $this->post('/groceries/add', ['name' => '  molho   de tomate '])->assertRedirect('main');
 
-        $this->assertDatabaseHas('groceries', ['name' => 'Molho De Tomate', 'amount' => 0]);
+        $this->assertDatabaseHas('groceries', ['name' => 'Molho De Tomate', 'selected' => false]);
     }
 
     public function test_add_does_not_duplicate(): void

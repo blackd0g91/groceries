@@ -2,7 +2,10 @@
 
 <tr class="{{ $position % 2 == 0 ? 'even' : 'odd' }}">
     <td><x-grocery-link :grocery="$grocery" /></td>
-    @for ($i = 1; $i <= 5; $i++)
-        <td><x-select-button :grocery="$grocery" :value="$i" hide /></td>
-    @endfor
+    <td>
+        <form method="POST" action="{{ url('select/' . $grocery->id) }}" select-and-hide>
+            @csrf
+            <button type="submit">Buy</button>
+        </form>
+    </td>
 </tr>

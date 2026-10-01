@@ -2,82 +2,112 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\RequirePassword;
 use App\Models\Grocery;
 use App\Models\Purchase;
 use Illuminate\Support\Str;
 
-Route::get('/', function () {
-    return view('main');
-});
+Route::get('login', function() {
+    if (session(RequirePassword::SESSION_KEY)) return redirect('/');
 
-Route::get('main', function() {
-    return view('main');
-});
+    return view('login');
+})->name('login');
 
-Route::get('selected', function() {
-    return view('selected');
-});
-
-Route::post('select/{grocery}', function(Grocery $grocery) {
+Route::post('login', function() {
 
     $validated = request()->validate([
-        'value' => ['required', 'integer', 'between:1,5'],
+        'password' => ['required', 'string'],
     ]);
 
-    $grocery->amount = (int) $validated['value'];
-    $grocery->save();
+    $expected = (string) config('app.password');
 
-    return redirect()->back();
+    if ($expected === '' || ! hash_equals($expected, $validated['password'])) {
+        return back()->withErrors(['password' => 'Wrong password.']);
+    }
 
-});
+    request()->session()->regenerate();
+    session([RequirePassword::SESSION_KEY => true]);
 
-Route::post('trash/{grocery}', function(Grocery $grocery) {
+    return redirect()->intended('/');
 
-    $grocery->amount = 0;
-    $grocery->save();
+})->middleware('throttle:5,1');
 
-    return redirect()->back();
+Route::middleware(RequirePassword::class)->group(function () {
 
-});
+    Route::post('logout', function() {
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
 
-Route::post('trash-all', function() {
-
-    Grocery::where('amount', '>', 0)->update(['amount' => 0]);
-
-    return redirect('main');
-
-});
-
-Route::post('purchase', function() {
-
-    DB::transaction(function () {
-        $groceries = Grocery::where('amount', '>', 0)->lockForUpdate()->get();
-
-        foreach ($groceries as $grocery) {
-            Purchase::create([
-                'grocery_id' => $grocery->id,
-                'amount' => $grocery->amount,
-            ]);
-
-            $grocery->amount = 0;
-            $grocery->save();
-        }
+        return redirect('login');
     });
 
-    return redirect()->back();
+    Route::get('/', function () {
+        return view('main');
+    });
 
-});
+    Route::get('main', function() {
+        return view('main');
+    });
 
-Route::post('groceries/add', function() {
+    Route::get('selected', function() {
+        return view('selected');
+    });
 
-    $validated = request()->validate([
-        'name' => ['required', 'string', 'max:255'],
-    ]);
+    Route::post('select/{grocery}', function(Grocery $grocery) {
 
-    $name = Str::title(Str::squish($validated['name']));
+        $grocery->selected = true;
+        $grocery->save();
 
-    Grocery::firstOrCreate(['name' => $name], ['amount' => 0]);
+        return redirect()->back();
 
-    return redirect('main');
+    });
+
+    Route::post('trash/{grocery}', function(Grocery $grocery) {
+
+        $grocery->selected = false;
+        $grocery->save();
+
+        return redirect()->back();
+
+    });
+
+    Route::post('trash-all', function() {
+
+        Grocery::where('selected', true)->update(['selected' => false]);
+
+        return redirect('main');
+
+    });
+
+    Route::post('purchase', function() {
+
+        DB::transaction(function () {
+            $groceries = Grocery::where('selected', true)->lockForUpdate()->get();
+
+            foreach ($groceries as $grocery) {
+                Purchase::create(['grocery_id' => $grocery->id]);
+
+                $grocery->selected = false;
+                $grocery->save();
+            }
+        });
+
+        return redirect()->back();
+
+    });
+
+    Route::post('groceries/add', function() {
+
+        $validated = request()->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        $name = Str::title(Str::squish($validated['name']));
+
+        Grocery::firstOrCreate(['name' => $name], ['selected' => false]);
+
+        return redirect('main');
+
+    });
 
 });

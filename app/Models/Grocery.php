@@ -12,12 +12,10 @@ class Grocery extends Model {
 
     protected $fillable = [
         'name',
-        'amount',
         'selected',
     ];
 
     protected $casts = [
-        'amount' => 'integer',
         'selected' => 'boolean',
     ];
 

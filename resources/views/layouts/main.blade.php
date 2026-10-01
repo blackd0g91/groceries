@@ -23,7 +23,9 @@
 
     <body class="bg-[#FFF] text-[#000]" style="padding: 20px;">
  
-        <x-header />
+        @if (session(\App\Http\Middleware\RequirePassword::SESSION_KEY))
+            <x-header />
+        @endif
         
         @yield('content')
 

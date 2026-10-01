@@ -5,4 +5,8 @@
         @csrf
         <button type="submit">Trash All</button>
     </form>
+    <form method="POST" action="{{ url('logout') }}">
+        @csrf
+        <button type="submit">Logout</button>
+    </form>
 </nav>

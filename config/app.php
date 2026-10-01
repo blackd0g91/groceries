@@ -95,6 +95,18 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Site Password
+    |--------------------------------------------------------------------------
+    |
+    | Password required on the login page before any other page can be
+    | reached. Leaving it empty locks everyone out.
+    |
+    */
+
+    'password' => env('APP_PASSWORD', ''),
+
     'cipher' => 'AES-256-CBC',
 
     'key' => env('APP_KEY'),
