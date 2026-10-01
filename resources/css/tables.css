@@ -32,7 +32,7 @@ input {
     border-radius: 10px;
 }
 
-td > a {
+td > form > button {
     background-color: #BBB;
     width: 100%;
     display: block;
@@ -40,9 +40,10 @@ td > a {
     padding: 5px;
     border-radius: 5px;
     box-shadow: 2px 2px 2px black;
+    cursor: pointer;
 }
 
-td > a:hover {
+td > form > button:hover {
     background-color: #AAA;
 }
 
@@ -77,7 +78,7 @@ button.btn-submit {
     cursor: pointer;
 }
 
-a.trash {
+button.trash {
     background-color: red;
     color: white;
     padding: 5px 10px;
@@ -85,10 +86,14 @@ a.trash {
     text-decoration: none;
 }
 
-a.trash:hover {
+button.trash:hover {
     background-color: darkred;
 }
 
-a.trash > i {
+button.trash > i {
     text-align:-webkit-center;
+}
+
+span.error {
+    color: red;
 }

@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use App\Models\Grocery;
 use App\Models\Purchase;
@@ -17,63 +18,51 @@ Route::get('selected', function() {
     return view('selected');
 });
 
-Route::get('select/{id}', function($id) {
-    
-    $value = request()->query('value');
-   
-    $grocery = Grocery::find($id);
+Route::post('select/{grocery}', function(Grocery $grocery) {
 
-    if ($grocery) {
-        $grocery->amount = $value;
-        $grocery->save();
-    }
+    $validated = request()->validate([
+        'value' => ['required', 'integer', 'between:1,5'],
+    ]);
+
+    $grocery->amount = (int) $validated['value'];
+    $grocery->save();
 
     return redirect()->back();
 
 });
 
-Route::get('trash/{id}', function($id) {
+Route::post('trash/{grocery}', function(Grocery $grocery) {
 
-    $grocery = Grocery::find($id);
-
-    if ($grocery) {
-        $grocery->amount = 0;
-        $grocery->save();
-    }
+    $grocery->amount = 0;
+    $grocery->save();
 
     return redirect()->back();
 
 });
 
-Route::get('trash-all', function() {
+Route::post('trash-all', function() {
 
-    $groceries = Grocery::all();
-
-    foreach ($groceries as $grocery) {
-        $grocery->amount = 0;
-        $grocery->save();
-    }
+    Grocery::where('amount', '>', 0)->update(['amount' => 0]);
 
     return redirect('main');
 
 });
 
-Route::get('purchase', function() {
+Route::post('purchase', function() {
 
-    $groceries = Grocery::all();
+    DB::transaction(function () {
+        $groceries = Grocery::where('amount', '>', 0)->lockForUpdate()->get();
 
-    foreach ($groceries as $grocery) {
-        if ($grocery->amount > 0) {
-
-            $purchase = new Purchase();
-            $purchase->grocery_id = $grocery->id;
-            $purchase->amount = $grocery->amount;
-            $purchase->save();
+        foreach ($groceries as $grocery) {
+            Purchase::create([
+                'grocery_id' => $grocery->id,
+                'amount' => $grocery->amount,
+            ]);
 
             $grocery->amount = 0;
             $grocery->save();
         }
-    }
+    });
 
     return redirect()->back();
 
@@ -81,21 +70,14 @@ Route::get('purchase', function() {
 
 Route::post('groceries/add', function() {
 
-    $name = request()->input('name');
+    $validated = request()->validate([
+        'name' => ['required', 'string', 'max:255'],
+    ]);
 
-    if ($name) {
-        $name = Str::title($name);
+    $name = Str::title(Str::squish($validated['name']));
 
-        $existingGrocery = Grocery::where('name', $name)->first();
-        if ($existingGrocery) return redirect('main');
-
-        $grocery = new Grocery();
-        $grocery->name = $name;
-        $grocery->amount = 0; // Default amount is 0
-        $grocery->save();
-    }
+    Grocery::firstOrCreate(['name' => $name], ['amount' => 0]);
 
     return redirect('main');
 
 });
-

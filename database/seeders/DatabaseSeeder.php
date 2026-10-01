@@ -195,7 +195,7 @@ class DatabaseSeeder extends Seeder
         Grocery::factory()->create(['name' => 'Manjericão']);
         Grocery::factory()->create(['name' => 'Canela']);
         Grocery::factory()->create(['name' => 'Páprica']);
-        Grocery::factory()->create(['name' => 'Farina de Trigo']);
+        Grocery::factory()->create(['name' => 'Farinha de Trigo']);
         Grocery::factory()->create(['name' => 'Amido de Milho']);
         Grocery::factory()->create(['name' => 'Fermento em Pó']);
         Grocery::factory()->create(['name' => 'Bicarbonato de Sódio']);

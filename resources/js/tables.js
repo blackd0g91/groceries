@@ -1,12 +1,13 @@
-export function selectAndHide(element, event) {
+export function selectAndHide(form, event) {
     event.preventDefault();
-    const row = element.closest('tr');
-    const url = element.href;
-    
-    fetch(url, {
-        method: 'GET',
+    const row = form.closest('tr');
+
+    fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
         headers: {
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
         }
     })
     .then(response => {
@@ -18,7 +19,7 @@ export function selectAndHide(element, event) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('[select-and-hide]').forEach(element => {
-        element.addEventListener('click', (event) => selectAndHide(element, event));
+    document.querySelectorAll('form[select-and-hide]').forEach(form => {
+        form.addEventListener('submit', (event) => selectAndHide(form, event));
     });
 });

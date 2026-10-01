@@ -21,7 +21,7 @@
 
     </head>
 
-    <body class="bg-[#FFF] text-[#000];" style="padding: 20px;">
+    <body class="bg-[#FFF] text-[#000]" style="padding: 20px;">
  
         <x-header />
         

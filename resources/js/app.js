@@ -1,4 +1,2 @@
 import './bootstrap';
-import {selectAndHide} from './tables'
-
-// window.selectAndHide = selectAndHide;
+import './tables';

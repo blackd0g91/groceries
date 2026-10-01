@@ -2,8 +2,7 @@
 
 use App\Models\Grocery;
 
-$selectedGroceries = Grocery::all()->where('amount', '>', 0)->sortBy('name');
-$counter = 0;
+$selectedGroceries = Grocery::where('amount', '>', 0)->orderBy('name')->get();
 
 @endphp
 
@@ -24,10 +23,7 @@ $counter = 0;
         </thead>
         <tbody>
             @foreach ($selectedGroceries as $grocery)
-                @php 
-                    echo $grocery->tableRowSelected($counter);
-                    $counter++;
-                @endphp
+                <x-grocery-row-selected :grocery="$grocery" :position="$loop->index" />
             @endforeach
         </tbody>
     </table>

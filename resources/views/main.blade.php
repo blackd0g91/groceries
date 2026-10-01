@@ -2,8 +2,7 @@
 
 use App\Models\Grocery;
 
-$unselectedGroceries = Grocery::all()->where('amount', '=', 0)->sortBy('name');
-$counterUnselected = 0;
+$unselectedGroceries = Grocery::where('amount', 0)->orderBy('name')->get();
 
 @endphp
 
@@ -23,10 +22,7 @@ $counterUnselected = 0;
         </thead>
         <tbody>
             @foreach ($unselectedGroceries as $grocery)
-                @php 
-                    echo $grocery->tableRowUnselected($counterUnselected);
-                    $counterUnselected++;
-                @endphp
+                <x-grocery-row-unselected :grocery="$grocery" :position="$loop->index" />
             @endforeach
         </tbody>
     </table>
@@ -35,9 +31,12 @@ $counterUnselected = 0;
         @csrf
         <label for="name">Add Grocery</label>
         <div class="flex gap-2">
-            <input style="width:100%" type="text" name="name" placeholder="Name...">
+            <input style="width:100%" type="text" id="name" name="name" placeholder="Name..." maxlength="255" required value="{{ old('name') }}">
             <button class="btn-submit" type="submit">Add</button>
         </div>
+        @error('name')
+            <span class="error">{{ $message }}</span>
+        @enderror
     </form>
 
 @endsection
