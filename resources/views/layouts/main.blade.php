@@ -5,8 +5,9 @@
 
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="color-scheme" content="light dark">
 
-        <title>{{ config('app.name') }} - @yield('title')</title>
+        <title>@yield('title') · Groceries</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -15,19 +16,20 @@
         <!-- Styles / Scripts -->
         @vite([
             'resources/css/app.css',
-            'resources/js/app.js',
-            'resources/css/tables.css'
+            'resources/js/app.js'
         ])
 
     </head>
 
-    <body class="bg-[#FFF] text-[#000]" style="padding: 20px;">
- 
+    <body class="min-h-dvh bg-paper font-sans text-ink antialiased">
+
         @if (session(\App\Http\Middleware\RequirePassword::SESSION_KEY))
-            <x-header />
+            <x-header>@yield('toolbar')</x-header>
         @endif
-        
-        @yield('content')
+
+        <main class="mx-auto max-w-xl px-4 pb-16 pt-6">
+            @yield('content')
+        </main>
 
     </body>
 
